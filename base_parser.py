@@ -2,6 +2,7 @@ import openpyxl
 from loguru import logger as log
 import random
 import re
+import os
 
 
 def number_cell_processing(get_str_number, get_value_cell: str) -> int:
@@ -87,6 +88,7 @@ def data_save(numbers_dict: dict) -> None:
         for cell in row:
             cell.border = boder_style
 
+    print('Saving file...')
     try:
         writebook.save('base.xlsx')
     except PermissionError:
@@ -94,31 +96,31 @@ def data_save(numbers_dict: dict) -> None:
 
 
 if __name__ == '__main__':
-    file = 'yamash.xlsx'
+    path = os.path.join(os.getcwd(), 'bases')
+    files = [os.path.join(path, get_file) for get_file in os.listdir(path) if os.path.isfile(os.path.join(path, get_file))]
     log.add("error.log", format="{level} | {message}", mode='w')
-
-    wbook = openpyxl.load_workbook(file)
-    sheet = wbook.active
-    print(f'Total records: {sheet.max_row}')
-
     numbers_base = dict()
 
-    for index in range(1, sheet.max_row + 1):
-        if sheet.cell(row=index, column=4).value:
-            cells = [
-                str(sheet.cell(row=index, column=get_column_num).value)
-                if sheet.cell(row=index, column=get_column_num).value else ''
-                for get_column_num in range(1, sheet.max_column + 1)
-            ]
+    for file in files:
+        wbook = openpyxl.load_workbook(file)
+        sheet = wbook.active
+        print(f'Total records: {sheet.max_row}')
 
-            returned_dict = data_exctraction(cells)
+        for index in range(1, sheet.max_row + 1):
+            if sheet.cell(row=index, column=4).value:
+                cells = [
+                    str(sheet.cell(row=index, column=get_column_num).value)
+                    if sheet.cell(row=index, column=get_column_num).value else ''
+                    for get_column_num in range(1, sheet.max_column + 1)
+                ]
 
-            if returned_dict.values():
-                if not numbers_base.get(len(returned_dict.keys())):
-                    numbers_base.update(returned_dict)
-                else:
-                    log.info(f"{returned_dict.keys()} already exists in base.")
+                returned_dict = data_exctraction(cells)
 
-    data_save(numbers_base)
+                if returned_dict.values():
+                    if not numbers_base.get(len(returned_dict.keys())):
+                        numbers_base.update(returned_dict)
+                    else:
+                        log.info(f"{returned_dict.keys()} already exists in base.")
 
     print(f'Total found: {len(numbers_base.keys())}')
+    data_save(numbers_base)
