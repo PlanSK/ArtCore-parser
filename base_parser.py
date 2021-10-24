@@ -60,20 +60,39 @@ def data_exctraction(get_row: list) -> dict():
 
 
 def data_save(numbers_dict: dict) -> None:
+    boder_style = openpyxl.styles.borders.Border(
+        left=openpyxl.styles.borders.Side(style='thin'), 
+        right=openpyxl.styles.borders.Side(style='thin'), 
+        top=openpyxl.styles.borders.Side(style='thin'), 
+        bottom=openpyxl.styles.borders.Side(style='thin')
+    )
     writebook = openpyxl.Workbook()
     active_sheet = writebook.active
+    active_sheet.title = 'User base'
     active_sheet.cell(row=1, column=1).value = 'N п/п'
     active_sheet.cell(row=1, column=2).value = 'Phone number'
     active_sheet.cell(row=1, column=3).value = 'User name'
     active_sheet.cell(row=1, column=4).value = 'Balance'
     active_sheet.cell(row=1, column=5).value = 'Total costs'
+    active_sheet.column_dimensions["A"].width = 10
+    active_sheet.column_dimensions["B"].width = 15
+    active_sheet.column_dimensions["C"].width = 60
+    active_sheet.column_dimensions["D"].width = 15
+    active_sheet.column_dimensions["E"].width = 15
 
     for index, get_number in enumerate(numbers_dict.keys()):
         active_sheet.cell(row=index + 2, column=1).value = index + 1
         active_sheet.cell(row=index + 2, column=2).value = get_number
         active_sheet.cell(row=index + 2, column=3).value = numbers_dict[get_number]['name']
         active_sheet.cell(row=index + 2, column=4).value = numbers_dict[get_number]['balance']
+        active_sheet.cell(row=index + 2, column=4).number_format = '0.00'
         active_sheet.cell(row=index + 2, column=5).value = numbers_dict[get_number]['total_costs']
+        active_sheet.cell(row=index + 2, column=5).number_format = '0.00'
+
+    for row in active_sheet.iter_rows(min_row=1, max_col=active_sheet.max_column, max_row=active_sheet.max_row):
+        for cell in row:
+            cell.border = boder_style
+
     try:
         writebook.save('base.xlsx')
     except PermissionError:
