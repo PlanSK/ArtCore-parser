@@ -1,36 +1,27 @@
 import openpyxl
 from loguru import logger as log
 import random
+import re
 
 
 def number_cell_processing(get_str_number, get_value_cell: str) -> int:
-    num_string = ''
-    number_list = list()
+    number = 0
 
-    for fragment in get_value_cell.split():
-        for char in fragment:
-            if char.isdigit():
-                num_string += char
-        if num_string:
-            number_list.append(num_string)
-            num_string = ''
-
-    if not len(number_list):
-        log.info(f"Wrong value in {get_str_number} row. Value '{get_value_cell}'")
+    if re.match(r'.*[7-8]{1}\d{10}', get_value_cell):
+        if len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0]) == 11:
+            number = '+7' + re.findall(r'[7-8]{1}\d{10}', get_value_cell)[0][1:]
+        elif len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0]) > 11:
+            leng = len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0])
+            log.info(f"Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+    elif re.match(r'.*[9]{1}\d{9}', get_value_cell) and len(re.findall(r'[9]{1}\d{9,}', get_value_cell)[0]) == 10:
+        number = '+7' + re.findall(r'[9]{1}\d{9,}', get_value_cell)[0]
+    elif re.match(r'.*[7-8]{1}\d{,9}', get_value_cell):
+        leng = len(re.findall(r'[7-8]{1}\d{,9}', get_value_cell)[0])
+        log.info(f"Short number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
     else:
-        for get_num in number_list:
-            if len(get_num) == 11:
-                if 7 > int(get_num[0]) > 8:
-                    continue
-                else:
-                    if int(get_num[0]) == 8:
-                        get_num = '7' + get_num[1:]
-                    return get_num
-            elif len(get_num) == 10 and get_num[0] == 9:
-                return '7' + get_num
-        log.info(f"Short or long values in {get_str_number} row. Value ({len(get_value_cell)})'{get_value_cell}'")
+        log.info(f"Wrong value in {get_str_number} row. Value '{get_value_cell}'")
 
-    return 0
+    return number
 
 
 def data_exctraction(get_row: list) -> dict():
@@ -43,7 +34,10 @@ def data_exctraction(get_row: list) -> dict():
 
             balance = 0.0
             if get_row[4]:
-                balance = float(get_row[4].replace(',', '.'))
+                try: 
+                    balance = float(get_row[4].replace(',', '.'))
+                except ValueError:
+                    log.error(f"Error in balance in {get_row[0]}. Value: {get_row[4]}. Skipped.")
             data_dict['balance'] = balance
 
             total_costs = 0.0
