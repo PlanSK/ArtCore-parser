@@ -14,6 +14,12 @@ def number_cell_processing(get_str_number, get_value_cell: str) -> int:
         elif len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0]) > 11:
             leng = len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0])
             log.info(f"Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+    if re.match(r'.*[3]{1}\d{10}', get_value_cell):
+        if len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0]) == 11:
+            number = '+7' + re.findall(r'[3]{1}\d{10}', get_value_cell)[0][1:]
+        elif len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0]) > 11:
+            leng = len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0])
+            log.info(f"Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
     elif re.match(r'.*[9]{1}\d{9}', get_value_cell) and len(re.findall(r'[9]{1}\d{9,}', get_value_cell)[0]) == 10:
         number = '+7' + re.findall(r'[9]{1}\d{9,}', get_value_cell)[0]
     elif re.match(r'.*[7-8]{1}\d{,9}', get_value_cell):
