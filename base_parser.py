@@ -116,11 +116,15 @@ if __name__ == '__main__':
 
                 returned_dict = data_exctraction(cells)
 
-                if returned_dict.values():
-                    if not numbers_base.get(len(returned_dict.keys())):
+                if returned_dict.keys():
+                    for key in returned_dict.keys():
+                        get_number = key
+                    if not numbers_base.get(get_number):
                         numbers_base.update(returned_dict)
                     else:
-                        log.info(f"{returned_dict.keys()} already exists in base.")
+                        numbers_base[get_number]['balance'] = max(returned_dict[get_number]['balance'], numbers_base[get_number]['balance'])
+                        numbers_base[get_number]['total_costs'] = max(returned_dict[get_number]['total_costs'], numbers_base[get_number]['total_costs'])
+                        log.info(f"{get_number} already exists in base. New data - B: {numbers_base[get_number]['balance']} TC: {numbers_base[get_number]['total_costs']}")
 
     print(f'Total found: {len(numbers_base.keys())}')
     data_save(numbers_base)
