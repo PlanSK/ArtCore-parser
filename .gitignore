@@ -2,5 +2,5 @@ venv/
 yamas/
 archives/
 bases/
-error.log
-base*.xlsx
+*.log
+*.xlsx

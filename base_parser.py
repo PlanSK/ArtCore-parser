@@ -5,37 +5,39 @@ import re
 import os
 
 
-def number_cell_processing(get_str_number, get_value_cell: str) -> int:
+def number_cell_processing(file: str, get_str_number, get_value_cell: str) -> int:
     number = 0
-
-    if re.match(r'.*[7-8]{1}\d{10}', get_value_cell):
+    if re.match(r'\D*[7-8]{1}\d{10}', get_value_cell):
         if len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0]) == 11:
             number = '+7' + re.findall(r'[7-8]{1}\d{10}', get_value_cell)[0][1:]
         elif len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0]) > 11:
             leng = len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0])
-            log.info(f"Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+            log.bind(long=True).info(f"({file}) Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+            return 0
     if re.match(r'.*[3]{1}\d{10}', get_value_cell):
         if len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0]) == 11:
             number = '+7' + re.findall(r'[3]{1}\d{10}', get_value_cell)[0][1:]
         elif len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0]) > 11:
             leng = len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0])
-            log.info(f"Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+            log.bind(long=True).info(f"({file}) Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+            return 0
     elif re.match(r'.*[9]{1}\d{9}', get_value_cell) and len(re.findall(r'[9]{1}\d{9,}', get_value_cell)[0]) == 10:
         number = '+7' + re.findall(r'[9]{1}\d{9,}', get_value_cell)[0]
     elif re.match(r'.*[7-8]{1}\d{,9}', get_value_cell):
         leng = len(re.findall(r'[7-8]{1}\d{,9}', get_value_cell)[0])
-        log.info(f"Short number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+        log.bind(short=True).info(f"({file}) Short number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+        return 0
     else:
-        log.info(f"Wrong value in {get_str_number} row. Value '{get_value_cell}'")
+        log.bind(wrong=True).info(f"({file}) Wrong value in {get_str_number} row. Value '{get_value_cell}'")
 
     return number
 
 
-def data_exctraction(get_row: list) -> dict():
+def data_exctraction(file: str, get_row: list) -> dict():
     data_dict = dict()
 
     if get_row[0] and get_row[3]:
-        get_number = number_cell_processing(get_row[0], get_row[3])
+        get_number = number_cell_processing(file, get_row[0], get_row[3])
         if get_number:
             data_dict['name'] = get_row[2]
 
@@ -44,7 +46,7 @@ def data_exctraction(get_row: list) -> dict():
                 try: 
                     balance = float(get_row[4].replace(',', '.'))
                 except ValueError:
-                    log.error(f"Error in balance in {get_row[0]}. Value: {get_row[4]}. Skipped.")
+                    log.bind(wrong=True).error(f"({file}) Error in balance in {get_row[0]}. Value: {get_row[4]}. Skipped.")
             data_dict['balance'] = balance
 
             total_costs = 0.0
@@ -52,7 +54,7 @@ def data_exctraction(get_row: list) -> dict():
                 try:
                     total_costs = float(get_row[6].split()[0].replace(',', '.'))
                 except ValueError:
-                    log.error(f"Error in total costs in {get_row[0]}. Value: {get_row[6]}. Skipped.")
+                    log.bind(wrong=True).error(f"({file}) Error in total costs in {get_row[0]}. Value: {get_row[6]}. Skipped.")
             data_dict['total_costs'] = total_costs
 
             return {get_number: data_dict}
@@ -104,7 +106,9 @@ def data_save(numbers_dict: dict) -> None:
 if __name__ == '__main__':
     path = os.path.join(os.getcwd(), 'bases')
     files = [os.path.join(path, get_file) for get_file in os.listdir(path) if os.path.isfile(os.path.join(path, get_file))]
-    log.add("error.log", format="{level} | {message}", mode='w')
+    log.add("long.log", filter=lambda record: "long" in record["extra"], mode='w')
+    log.add("short.log", filter=lambda record: "short" in record["extra"], mode='w')
+    log.add("error.log", filter=lambda record: "wrong" in record["extra"], mode='w')
     numbers_base = dict()
 
     for file in files:
@@ -120,7 +124,7 @@ if __name__ == '__main__':
                     for get_column_num in range(1, sheet.max_column + 1)
                 ]
 
-                returned_dict = data_exctraction(cells)
+                returned_dict = data_exctraction(file, cells)
 
                 if returned_dict.keys():
                     for key in returned_dict.keys():
@@ -130,7 +134,6 @@ if __name__ == '__main__':
                     else:
                         numbers_base[get_number]['balance'] = max(returned_dict[get_number]['balance'], numbers_base[get_number]['balance'])
                         numbers_base[get_number]['total_costs'] = max(returned_dict[get_number]['total_costs'], numbers_base[get_number]['total_costs'])
-                        log.info(f"{get_number} already exists in base. New data - B: {numbers_base[get_number]['balance']} TC: {numbers_base[get_number]['total_costs']}")
 
     print(f'Total found: {len(numbers_base.keys())}')
     data_save(numbers_base)
