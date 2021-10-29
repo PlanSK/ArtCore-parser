@@ -6,31 +6,29 @@ import os
 
 
 def number_cell_processing(file: str, get_str_number, get_value_cell: str) -> int:
-    number = 0
-    if re.match(r'\D*[7-8]{1}\d{10}', get_value_cell):
-        if len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0]) == 11:
-            number = '+7' + re.findall(r'[7-8]{1}\d{10}', get_value_cell)[0][1:]
-        elif len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0]) > 11:
-            leng = len(re.findall(r'[7-8]{1}\d{10,}', get_value_cell)[0])
-            log.bind(long=True).info(f"({file}) Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+    short = False
+    long = False
+    if re.findall(r'([3789]){1}\d{1,}', get_value_cell):
+        for s in re.finditer(r'([3789]){1}\d{1,}', get_value_cell):
+            get_match = s.group()
+            if get_match[0] == '9' and len(get_match) == 10:
+                return '+7' + get_match
+            elif get_match[0] != '9' and len(get_match) == 11:
+                return '+7' + get_match[1:]
+            elif len(get_match) < 11:
+                short = True
+            elif len(get_match) > 11:
+                long = True
+
+        get_match = next(re.finditer(r'([3789]){1}\d{1,}', get_value_cell)).group()
+        if short:
+            log.bind(short=True).info(f"({file}) Short number value in {get_str_number} row. Value ({len(get_match)}) '{get_value_cell}'")
             return 0
-    if re.match(r'.*[3]{1}\d{10}', get_value_cell):
-        if len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0]) == 11:
-            number = '+7' + re.findall(r'[3]{1}\d{10}', get_value_cell)[0][1:]
-        elif len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0]) > 11:
-            leng = len(re.findall(r'[3]{1}\d{10,}', get_value_cell)[0])
-            log.bind(long=True).info(f"({file}) Long number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
+        elif long:
+            log.bind(long=True).info(f"({file}) Long number value in {get_str_number} row. Value ({len(get_match)}) '{get_value_cell}'")
             return 0
-    elif re.match(r'.*[9]{1}\d{9}', get_value_cell) and len(re.findall(r'[9]{1}\d{9,}', get_value_cell)[0]) == 10:
-        number = '+7' + re.findall(r'[9]{1}\d{9,}', get_value_cell)[0]
-    elif re.match(r'.*[7-8]{1}\d{,9}', get_value_cell):
-        leng = len(re.findall(r'[7-8]{1}\d{,9}', get_value_cell)[0])
-        log.bind(short=True).info(f"({file}) Short number value in {get_str_number} row. Value ({leng}) '{get_value_cell}'")
-        return 0
     else:
         log.bind(wrong=True).info(f"({file}) Wrong value in {get_str_number} row. Value '{get_value_cell}'")
-
-    return number
 
 
 def data_exctraction(file: str, get_row: list) -> dict():
@@ -105,7 +103,7 @@ def data_save(numbers_dict: dict) -> None:
 
 if __name__ == '__main__':
     path = os.path.join(os.getcwd(), 'bases')
-    files = [os.path.join(path, get_file) for get_file in os.listdir(path) if os.path.isfile(os.path.join(path, get_file))]
+    files = [os.path.join(path, get_file) for get_file in os.listdir(path) if (os.path.isfile(os.path.join(path, get_file)) and get_file[0].isalpha())]
     log.add("long.log", filter=lambda record: "long" in record["extra"], mode='w')
     log.add("short.log", filter=lambda record: "short" in record["extra"], mode='w')
     log.add("error.log", filter=lambda record: "wrong" in record["extra"], mode='w')

@@ -1,0 +1,5 @@
+colorama==0.4.4
+et-xmlfile==1.1.0
+loguru==0.5.3
+openpyxl==3.0.9
+win32-setctime==1.0.3
