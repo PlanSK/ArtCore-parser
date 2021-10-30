@@ -5,7 +5,12 @@ import re
 import os
 
 
-def number_cell_processing(file: str, get_str_number, get_value_cell: str) -> int:
+def number_cell_processing(
+    file: str, 
+    get_str_number: str, 
+    get_value_cell: str
+) -> int:
+
     short = False
     long = False
     if re.findall(r'([3789]){1}\d{1,}', get_value_cell):
@@ -22,16 +27,36 @@ def number_cell_processing(file: str, get_str_number, get_value_cell: str) -> in
 
         get_match = next(re.finditer(r'([3789]){1}\d{1,}', get_value_cell)).group()
         if short:
-            log.bind(short=True).info(f"({file}) Short number value in {get_str_number} row. Value ({len(get_match)}) '{get_value_cell}'")
+            log.bind(short=True).info(
+                f"({file}) Short number value in {get_str_number} row. "
+                f"Value ({len(get_match)}) '{get_value_cell}'"
+            )
             return 0
         elif long:
-            log.bind(long=True).info(f"({file}) Long number value in {get_str_number} row. Value ({len(get_match)}) '{get_value_cell}'")
+            log.bind(long=True).info(
+                f"({file}) Long number value in {get_str_number} row. "
+                f"Value ({len(get_match)}) '{get_value_cell}'"
+            )
             return 0
     else:
-        log.bind(wrong=True).info(f"({file}) Wrong value in {get_str_number} row. Value '{get_value_cell}'")
+        log.bind(wrong=True).info(
+            f"({file}) Wrong value in {get_str_number} row. "
+            f"Value '{get_value_cell}'"
+        )
 
 
-def data_exctraction(file: str, order_number, _, personal_name, phone_number, get_balance, __, costs, *remaining) -> dict():
+def data_exctraction(
+    file: str,
+    order_number: str,
+    _,
+    personal_name: str,
+    phone_number: str,
+    get_balance: str,
+    __,
+    costs: str,
+    *remaining
+) -> dict():
+
     data_dict = dict()
 
     if order_number and phone_number:
@@ -44,7 +69,10 @@ def data_exctraction(file: str, order_number, _, personal_name, phone_number, ge
                 try: 
                     balance = float(get_balance.replace(',', '.'))
                 except ValueError:
-                    log.bind(wrong=True).error(f"({file}) Error in balance in {order_number}. Value: {get_balance}. Skipped.")
+                    log.bind(wrong=True).error(
+                        f"({file}) Error in balance in {order_number}. "
+                        f"Value: {get_balance}. Skipped."
+                    )
             data_dict['balance'] = balance
 
             total_costs = 0.0
@@ -52,7 +80,10 @@ def data_exctraction(file: str, order_number, _, personal_name, phone_number, ge
                 try:
                     total_costs = float(costs.split()[0].replace(',', '.'))
                 except ValueError:
-                    log.bind(wrong=True).error(f"({file}) Error in total costs in {order_number}. Value: {costs}. Skipped.")
+                    log.bind(wrong=True).error(
+                        f"({file}) Error in total costs in {order_number}. "
+                        f"Value: {costs}. Skipped."
+                    )
             data_dict['total_costs'] = total_costs
 
             return get_number, data_dict
@@ -128,9 +159,20 @@ if __name__ == '__main__':
         if (os.path.isfile(os.path.join(path, get_file))
                 and get_file[0].isalpha() and 'xls' in get_file.split('.')[1])
     ]
-    log.add("long.log", filter=lambda record: "long" in record["extra"], mode='w')
-    log.add("short.log", filter=lambda record: "short" in record["extra"], mode='w')
-    log.add("error.log", filter=lambda record: "wrong" in record["extra"], mode='w')
+    
+    log.add(
+        "long.log",
+        filter=lambda record: "long" in record["extra"], mode='w'
+    )
+    log.add(
+        "short.log",
+        filter=lambda record: "short" in record["extra"], mode='w'
+    )
+    log.add(
+        "error.log",
+        filter=lambda record: "wrong" in record["extra"], mode='w'
+    )
+    
     numbers_base = dict()
 
     for file in files:
@@ -138,10 +180,19 @@ if __name__ == '__main__':
         sheet = wbook.active
         print(f'Total records: {sheet.max_row}')
 
-        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row, max_col=sheet.max_column):
+        for row in sheet.iter_rows(
+            min_row=1, 
+            max_row=sheet.max_row, 
+            max_col=sheet.max_column
+        ):
+
             get_row = [cell.value for cell in row]
             if get_row[3]:
-                cells = [str(get_cell) if get_cell else '' for get_cell in get_row]
+                cells = [
+                    str(get_cell)
+                    if get_cell else ''
+                    for get_cell in get_row
+                ]
 
                 get_number, returned_dict = data_exctraction(file, *cells)
 
