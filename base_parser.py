@@ -106,7 +106,8 @@ if __name__ == '__main__':
     files = [
         os.path.join(path, get_file) 
         for get_file in os.listdir(path) 
-        if (os.path.isfile(os.path.join(path, get_file)) and get_file[0].isalpha())
+        if (os.path.isfile(os.path.join(path, get_file))
+                and get_file[0].isalpha() and 'xls' in get_file.split('.')[1])
     ]
     log.add("long.log", filter=lambda record: "long" in record["extra"], mode='w')
     log.add("short.log", filter=lambda record: "short" in record["extra"], mode='w')
