@@ -103,7 +103,11 @@ def data_save(numbers_dict: dict) -> None:
 
 if __name__ == '__main__':
     path = os.path.join(os.getcwd(), 'bases')
-    files = [os.path.join(path, get_file) for get_file in os.listdir(path) if (os.path.isfile(os.path.join(path, get_file)) and get_file[0].isalpha())]
+    files = [
+        os.path.join(path, get_file) 
+        for get_file in os.listdir(path) 
+        if (os.path.isfile(os.path.join(path, get_file)) and get_file[0].isalpha())
+    ]
     log.add("long.log", filter=lambda record: "long" in record["extra"], mode='w')
     log.add("short.log", filter=lambda record: "short" in record["extra"], mode='w')
     log.add("error.log", filter=lambda record: "wrong" in record["extra"], mode='w')
@@ -125,13 +129,18 @@ if __name__ == '__main__':
                 returned_dict = data_exctraction(file, cells)
 
                 if returned_dict.keys():
-                    for key in returned_dict.keys():
-                        get_number = key
+                    get_number = list(returned_dict.keys())[0]
                     if not numbers_base.get(get_number):
                         numbers_base.update(returned_dict)
                     else:
-                        numbers_base[get_number]['balance'] = max(returned_dict[get_number]['balance'], numbers_base[get_number]['balance'])
-                        numbers_base[get_number]['total_costs'] = max(returned_dict[get_number]['total_costs'], numbers_base[get_number]['total_costs'])
+                        numbers_base[get_number]['balance'] = max(
+                            returned_dict[get_number]['balance'],
+                            numbers_base[get_number]['balance']
+                        )
+                        numbers_base[get_number]['total_costs'] = max(
+                            returned_dict[get_number]['total_costs'],
+                            numbers_base[get_number]['total_costs']
+                        )
 
     print(f'Total found: {len(numbers_base.keys())}')
     data_save(numbers_base)
