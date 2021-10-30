@@ -31,33 +31,33 @@ def number_cell_processing(file: str, get_str_number, get_value_cell: str) -> in
         log.bind(wrong=True).info(f"({file}) Wrong value in {get_str_number} row. Value '{get_value_cell}'")
 
 
-def data_exctraction(file: str, get_row: list) -> dict():
+def data_exctraction(file: str, order_number, _, personal_name, phone_number, get_balance, __, costs, *remaining) -> dict():
     data_dict = dict()
 
-    if get_row[0] and get_row[3]:
-        get_number = number_cell_processing(file, get_row[0], get_row[3])
+    if order_number and phone_number:
+        get_number = number_cell_processing(file, order_number, phone_number)
         if get_number:
-            data_dict['name'] = get_row[2]
+            data_dict['name'] = re.sub(r'[^А-Яа-яёЁ\s]', '', personal_name).strip()
 
             balance = 0.0
             if get_row[4]:
                 try: 
-                    balance = float(get_row[4].replace(',', '.'))
+                    balance = float(get_balance.replace(',', '.'))
                 except ValueError:
-                    log.bind(wrong=True).error(f"({file}) Error in balance in {get_row[0]}. Value: {get_row[4]}. Skipped.")
+                    log.bind(wrong=True).error(f"({file}) Error in balance in {order_number}. Value: {get_balance}. Skipped.")
             data_dict['balance'] = balance
 
             total_costs = 0.0
             if get_row[6]:
                 try:
-                    total_costs = float(get_row[6].split()[0].replace(',', '.'))
+                    total_costs = float(costs.split()[0].replace(',', '.'))
                 except ValueError:
-                    log.bind(wrong=True).error(f"({file}) Error in total costs in {get_row[0]}. Value: {get_row[6]}. Skipped.")
+                    log.bind(wrong=True).error(f"({file}) Error in total costs in {order_number}. Value: {costs}. Skipped.")
             data_dict['total_costs'] = total_costs
 
-            return {get_number: data_dict}
+            return get_number, data_dict
 
-    return dict()
+    return None, None
 
 
 def data_save(numbers_dict: dict) -> None:
@@ -70,27 +70,46 @@ def data_save(numbers_dict: dict) -> None:
     writebook = openpyxl.Workbook()
     active_sheet = writebook.active
     active_sheet.title = 'User base'
-    active_sheet.cell(row=1, column=1).value = 'N п/п'
-    active_sheet.cell(row=1, column=2).value = 'Phone number'
-    active_sheet.cell(row=1, column=3).value = 'User name'
-    active_sheet.cell(row=1, column=4).value = 'Balance'
-    active_sheet.cell(row=1, column=5).value = 'Total costs'
-    active_sheet.column_dimensions["A"].width = 10
-    active_sheet.column_dimensions["B"].width = 15
-    active_sheet.column_dimensions["C"].width = 60
-    active_sheet.column_dimensions["D"].width = 15
-    active_sheet.column_dimensions["E"].width = 15
+    cell_names = [
+        'N п/п',
+        'Phone number',
+        'User name',
+        'Balance',
+        'Total costs',
+    ]
+    
+    dimensions = (
+        ("A", 10),
+        ("B", 15),
+        ("C", 60),
+        ("D", 15),
+        ("E", 15),
+    )
 
-    for index, get_number in enumerate(numbers_dict.keys()):
-        active_sheet.cell(row=index + 2, column=1).value = index + 1
-        active_sheet.cell(row=index + 2, column=2).value = get_number
-        active_sheet.cell(row=index + 2, column=3).value = numbers_dict[get_number]['name']
-        active_sheet.cell(row=index + 2, column=4).value = numbers_dict[get_number]['balance']
-        active_sheet.cell(row=index + 2, column=4).number_format = '0.00'
-        active_sheet.cell(row=index + 2, column=5).value = numbers_dict[get_number]['total_costs']
-        active_sheet.cell(row=index + 2, column=5).number_format = '0.00'
+    for cell, dim in dimensions:
+        active_sheet.column_dimensions[cell].width = dim
 
-    for row in active_sheet.iter_rows(min_row=1, max_col=active_sheet.max_column, max_row=active_sheet.max_row):
+    for cell, name in enumerate(cell_names, start=1):
+        active_sheet.cell(row=1, column=cell).value = name
+
+    for index, (get_number, value) in enumerate(numbers_dict.items(), start=1):
+        value_list = [
+            index,
+            get_number,
+            numbers_dict[get_number]['name'],
+            numbers_dict[get_number]['balance'],
+            numbers_dict[get_number]['total_costs']
+        ]
+        for col_number, value in enumerate(value_list, start=1):
+            active_sheet.cell(row=index + 1, column=col_number).value = value
+
+        for column in range(4, 6):
+            active_sheet.cell(row=index + 1, column=column).number_format = '0.00'
+
+    for row in active_sheet.iter_rows(
+            min_row=1,
+            max_col=active_sheet.max_column,
+            max_row=active_sheet.max_row):
         for cell in row:
             cell.border = boder_style
 
@@ -124,19 +143,18 @@ if __name__ == '__main__':
             if get_row[3]:
                 cells = [str(get_cell) if get_cell else '' for get_cell in get_row]
 
-                returned_dict = data_exctraction(file, cells)
+                get_number, returned_dict = data_exctraction(file, *cells)
 
-                if returned_dict.keys():
-                    get_number = list(returned_dict.keys())[0]
+                if get_number:
                     if not numbers_base.get(get_number):
-                        numbers_base.update(returned_dict)
+                        numbers_base[get_number] = returned_dict
                     else:
                         numbers_base[get_number]['balance'] = max(
-                            returned_dict[get_number]['balance'],
+                            returned_dict['balance'],
                             numbers_base[get_number]['balance']
                         )
                         numbers_base[get_number]['total_costs'] = max(
-                            returned_dict[get_number]['total_costs'],
+                            returned_dict['total_costs'],
                             numbers_base[get_number]['total_costs']
                         )
 
