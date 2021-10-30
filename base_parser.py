@@ -119,13 +119,10 @@ if __name__ == '__main__':
         sheet = wbook.active
         print(f'Total records: {sheet.max_row}')
 
-        for index in range(1, sheet.max_row + 1):
-            if sheet.cell(row=index, column=4).value:
-                cells = [
-                    str(sheet.cell(row=index, column=get_column_num).value)
-                    if sheet.cell(row=index, column=get_column_num).value else ''
-                    for get_column_num in range(1, sheet.max_column + 1)
-                ]
+        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row, max_col=sheet.max_column):
+            get_row = [cell.value for cell in row]
+            if get_row[3]:
+                cells = [str(get_cell) if get_cell else '' for get_cell in get_row]
 
                 returned_dict = data_exctraction(file, cells)
 
