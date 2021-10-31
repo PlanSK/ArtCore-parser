@@ -155,6 +155,7 @@ def data_save(numbers_dict: dict) -> None:
 
 
 if __name__ == '__main__':
+    balance_bonus = 0.0
     start_time = datetime.now()
     path = os.path.join(os.getcwd(), 'bases')
     files = [
@@ -212,6 +213,11 @@ if __name__ == '__main__':
                             returned_dict['total_costs'],
                             numbers_base[get_number]['total_costs']
                         )
+
+    if balance_bonus:
+        print(f'Add balance bonus {balance_bonus} RUB.')
+        for number in numbers_base.keys():
+            numbers_base[number]['balance'] += balance_bonus
 
     print(f'Total found: {len(numbers_base.keys())} records.')
     data_save(numbers_base)
