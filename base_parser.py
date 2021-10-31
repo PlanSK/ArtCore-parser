@@ -1,3 +1,4 @@
+from datetime import date, datetime
 import openpyxl
 from loguru import logger as log
 import random
@@ -117,6 +118,8 @@ def data_save(numbers_dict: dict) -> None:
         ("E", 15),
     )
 
+    file_name = 'base.xlsx'
+
     for cell, dim in dimensions:
         active_sheet.column_dimensions[cell].width = dim
 
@@ -144,14 +147,15 @@ def data_save(numbers_dict: dict) -> None:
         for cell in row:
             cell.border = boder_style
 
-    print('Saving file...')
+    print(f'Saving file... {file_name}')
     try:
-        writebook.save('base.xlsx')
+        writebook.save(file_name)
     except PermissionError:
-        writebook.save('base'+str(random.randint(10000,99999))+'.xlsx')
+        writebook.save(file_name.split('.')[0]+str(random.randint(10000,99999))+'.xlsx')
 
 
 if __name__ == '__main__':
+    start_time = datetime.now()
     path = os.path.join(os.getcwd(), 'bases')
     files = [
         os.path.join(path, get_file) 
@@ -209,5 +213,6 @@ if __name__ == '__main__':
                             numbers_base[get_number]['total_costs']
                         )
 
-    print(f'Total found: {len(numbers_base.keys())}')
+    print(f'Total found: {len(numbers_base.keys())} records.')
     data_save(numbers_base)
+    print(f"Time work: {datetime.now() - start_time}")
