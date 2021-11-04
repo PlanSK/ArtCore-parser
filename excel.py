@@ -1,3 +1,7 @@
+import openpyxl
+import random
+
+
 def data_save(numbers_dict: dict) -> None:
     boder_style = openpyxl.styles.borders.Border(
         left=openpyxl.styles.borders.Side(style='thin'), 

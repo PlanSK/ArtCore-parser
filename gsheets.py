@@ -4,12 +4,15 @@ from parser import number_cell_processing
 
 def analyze_row(number, card, fname, name, oname, phone_number, rname, roname, *args) -> dict():
     if fname:
-        if name and oname:
-            fio = ' '.join([fname, name, oname])
-        elif not name and not oname and rname and roname:
-            fio = ' '.join([fname, rname, roname])
-        elif name and not oname:
-            fio = ' '.join([fname, name])
+        fio = fname
+        if name:
+            fio += ' ' + name
+        elif not name and rname:
+            fio += ' ' + rname
+        if oname:
+            fio += ' ' + oname
+        elif not oname and roname:
+            fio += ' ' + roname
 
         if name and not phone_number and card:
             phone_number = card
@@ -25,15 +28,18 @@ def analyze_row(number, card, fname, name, oname, phone_number, rname, roname, *
 
     return dict()
 
+def gsheets_load() -> dict:
+    gc = gspread.service_account(filename='et_creds.json')
 
-gc = gspread.service_account(filename='et_creds.json')
+    sh = gc.open_by_key("1EsL801iyUvi7TtcHOubsnKyYt37VgeCoVPDlcVNi2HA")
 
-sh = gc.open_by_key("1EsL801iyUvi7TtcHOubsnKyYt37VgeCoVPDlcVNi2HA")
+    list_of_rows = sh.sheet1.get_all_values()
+    base = dict()
 
-list_of_rows = sh.sheet1.get_all_values()
 
-for num, row in enumerate(list_of_rows):
-    params = [cell.strip() for cell in [num] + row[4:9] + row[15:17]]
-    number = analyze_row(*params)
-
-    print(f"{num}: {number}")
+    for num, row in enumerate(list_of_rows):
+        params = [cell.strip() for cell in [str(num)] + row[4:9] + row[15:17]]
+        if analyze_row(*params):
+            base.update(analyze_row(*params))
+    
+    return base

@@ -5,6 +5,7 @@ import random
 import re
 import os
 from excel import data_save
+import gsheets
 
 
 def number_cell_processing(
@@ -117,7 +118,7 @@ if __name__ == '__main__':
         filter=lambda record: "wrong" in record["extra"], mode='w'
     )
     
-    numbers_base = dict()
+    numbers_base = gsheets.gsheets_load()
 
     for file in files:
         wbook = openpyxl.load_workbook(file)
