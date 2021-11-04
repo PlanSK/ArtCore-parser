@@ -1,14 +1,26 @@
 import gspread
-from parser import number_cell_processing
+from . import parser
 
 
-def analyze_row(number, card, fname, name, oname, phone_number, rname, roname, *args) -> dict():
+def analyze_row(
+    number: str,
+    card: str,
+    fname: str,
+    name: str,
+    oname: str,
+    phone_number: str,
+    rname: str,
+    roname: str,
+    *args
+) -> dict():
     if fname:
         fio = fname
+        
         if name:
             fio += ' ' + name
         elif not name and rname:
             fio += ' ' + rname
+        
         if oname:
             fio += ' ' + oname
         elif not oname and roname:
@@ -17,9 +29,9 @@ def analyze_row(number, card, fname, name, oname, phone_number, rname, roname, *
         if name and not phone_number and card:
             phone_number = card
 
-        if phone_number and number_cell_processing('GSheets', number, phone_number):
+        if phone_number and parser.number_cell_processing('GSheets', number, phone_number):
             return {
-                number_cell_processing('GSheets', number, phone_number): {
+                parser.number_cell_processing('GSheets', number, phone_number): {
                     'name': fio,
                     'balance': float(0),
                     'total_costs': float(0)

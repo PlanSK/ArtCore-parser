@@ -4,7 +4,7 @@ from loguru import logger as log
 import random
 import re
 import os
-from excel import data_save
+from . import excel
 import gsheets
 
 
@@ -160,5 +160,5 @@ if __name__ == '__main__':
             numbers_base[number]['balance'] += balance_bonus
 
     print(f'Total found: {len(numbers_base.keys())} records.')
-    data_save(numbers_base)
+    excel.data_save(numbers_base)
     print(f"Time work: {datetime.now() - start_time}")
