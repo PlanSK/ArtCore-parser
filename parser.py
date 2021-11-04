@@ -1,8 +1,11 @@
+from datetime import date, datetime
 import openpyxl
 from loguru import logger as log
 import random
 import re
 import os
+from excel import data_save
+import gsheets
 
 
 def number_cell_processing(
@@ -91,67 +94,9 @@ def data_exctraction(
     return None, None
 
 
-def data_save(numbers_dict: dict) -> None:
-    boder_style = openpyxl.styles.borders.Border(
-        left=openpyxl.styles.borders.Side(style='thin'), 
-        right=openpyxl.styles.borders.Side(style='thin'), 
-        top=openpyxl.styles.borders.Side(style='thin'), 
-        bottom=openpyxl.styles.borders.Side(style='thin')
-    )
-    writebook = openpyxl.Workbook()
-    active_sheet = writebook.active
-    active_sheet.title = 'User base'
-    cell_names = [
-        'N п/п',
-        'Phone number',
-        'User name',
-        'Balance',
-        'Total costs',
-    ]
-    
-    dimensions = (
-        ("A", 10),
-        ("B", 15),
-        ("C", 60),
-        ("D", 15),
-        ("E", 15),
-    )
-
-    for cell, dim in dimensions:
-        active_sheet.column_dimensions[cell].width = dim
-
-    for cell, name in enumerate(cell_names, start=1):
-        active_sheet.cell(row=1, column=cell).value = name
-
-    for index, (get_number, value) in enumerate(numbers_dict.items(), start=1):
-        value_list = [
-            index,
-            get_number,
-            numbers_dict[get_number]['name'],
-            numbers_dict[get_number]['balance'],
-            numbers_dict[get_number]['total_costs']
-        ]
-        for col_number, value in enumerate(value_list, start=1):
-            active_sheet.cell(row=index + 1, column=col_number).value = value
-
-        for column in range(4, 6):
-            active_sheet.cell(row=index + 1, column=column).number_format = '0.00'
-
-    for row in active_sheet.iter_rows(
-            min_row=1,
-            max_col=active_sheet.max_column,
-            max_row=active_sheet.max_row):
-        for cell in row:
-            cell.border = boder_style
-
-    print('Saving file...')
-    try:
-        writebook.save('base.xlsx')
-    except PermissionError:
-        writebook.save('base'+str(random.randint(10000,99999))+'.xlsx')
-
-
 if __name__ == '__main__':
+    balance_bonus = 0.0
+    start_time = datetime.now()
     path = os.path.join(os.getcwd(), 'bases')
     files = [
         os.path.join(path, get_file) 
@@ -173,7 +118,7 @@ if __name__ == '__main__':
         filter=lambda record: "wrong" in record["extra"], mode='w'
     )
     
-    numbers_base = dict()
+    numbers_base = gsheets.gsheets_load()
 
     for file in files:
         wbook = openpyxl.load_workbook(file)
@@ -209,5 +154,11 @@ if __name__ == '__main__':
                             numbers_base[get_number]['total_costs']
                         )
 
-    print(f'Total found: {len(numbers_base.keys())}')
+    if balance_bonus:
+        print(f'Add balance bonus {balance_bonus} RUB.')
+        for number in numbers_base.keys():
+            numbers_base[number]['balance'] += balance_bonus
+
+    print(f'Total found: {len(numbers_base.keys())} records.')
     data_save(numbers_base)
+    print(f"Time work: {datetime.now() - start_time}")
