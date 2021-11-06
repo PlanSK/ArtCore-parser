@@ -1,5 +1,5 @@
 import gspread
-from . import parser
+from parser import number_cell_processing
 
 
 def analyze_row(
@@ -29,9 +29,9 @@ def analyze_row(
         if name and not phone_number and card:
             phone_number = card
 
-        if phone_number and parser.number_cell_processing('GSheets', number, phone_number):
+        if phone_number and number_cell_processing('GSheets', number, phone_number):
             return {
-                parser.number_cell_processing('GSheets', number, phone_number): {
+                number_cell_processing('GSheets', number, phone_number): {
                     'name': fio,
                     'balance': float(0),
                     'total_costs': float(0)
