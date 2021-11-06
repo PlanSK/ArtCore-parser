@@ -2,6 +2,9 @@ import gspread
 from parser import number_cell_processing
 
 
+GSHEETS_API_KEY = 'esports_cred.json'
+
+
 def analyze_row(
     number: str,
     card: str,
@@ -41,7 +44,7 @@ def analyze_row(
     return dict()
 
 def gsheets_load() -> dict:
-    gc = gspread.service_account(filename='et_creds.json')
+    gc = gspread.service_account(filename=GSHEETS_API_KEY)
 
     sh = gc.open_by_key("1EsL801iyUvi7TtcHOubsnKyYt37VgeCoVPDlcVNi2HA")
 
