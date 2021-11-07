@@ -1,6 +1,8 @@
 import gspread
-from parser import number_cell_processing
+import gspread_formatting
+import parser
 
+from gspread_formatting.models import TextFormat
 
 GSHEETS_API_KEY = 'esports_cred.json'
 
@@ -32,9 +34,16 @@ def analyze_row(
         if name and not phone_number and card:
             phone_number = card
 
-        if phone_number and number_cell_processing('GSheets', number, phone_number):
+        if phone_number and parser.number_cell_processing(
+            'GSheets',
+            number,
+            phone_number
+        ):
             return {
-                number_cell_processing('GSheets', number, phone_number): {
+                parser.number_cell_processing(
+                    'GSheets',
+                    number,
+                    phone_number): {
                     'name': fio,
                     'balance': float(0),
                     'total_costs': float(0)
@@ -43,12 +52,12 @@ def analyze_row(
 
     return dict()
 
-def gsheets_load() -> dict:
-    gc = gspread.service_account(filename=GSHEETS_API_KEY)
 
-    sh = gc.open_by_key("1EsL801iyUvi7TtcHOubsnKyYt37VgeCoVPDlcVNi2HA")
+def gsheets_load(table_key: str) -> dict:
+    google_connect = gspread.service_account(filename=GSHEETS_API_KEY)
+    gsheet = google_connect.open_by_key(table_key)
 
-    list_of_rows = sh.sheet1.get_all_values()
+    list_of_rows = gsheet.sheet1.get_all_values()
     base = dict()
 
 
@@ -58,3 +67,82 @@ def gsheets_load() -> dict:
             base.update(analyze_row(*params))
     
     return base
+
+
+def gsheets_save(numbers: dict):
+    table_key = "1n5A-fkR0LYCdTbdiBVLcRZ4-AKjEoetCE2bgGJEIym0"
+    google_connect = gspread.service_account(filename=GSHEETS_API_KEY)
+    gsheet = google_connect.open_by_key(table_key)
+    worksheet = gsheet.sheet1
+    worksheet.clear()
+    write_list = []
+
+    float_style = {
+        'numberFormat': {
+            'type': 'NUMBER',
+            'pattern': '#,##0.00'
+        }
+    }
+    
+    borders_style = gspread_formatting.Border(
+        style='SOLID',
+        color=gspread_formatting.Color(0, 0, 0),
+        width=1
+    )
+    table_style = gspread_formatting.CellFormat(
+        borders=gspread_formatting.Borders(
+            top=borders_style,
+            bottom=borders_style,
+            left=borders_style,
+            right=borders_style
+        )
+    )
+    title_format = gspread_formatting.CellFormat(
+        backgroundColor=gspread_formatting.color(1, 0, 0),
+        horizontalAlignment='CENTER',
+        textFormat=TextFormat(
+            foregroundColor=gspread_formatting.color(1, 1, 1),
+            bold=True,
+            fontSize=10
+        )
+    )
+    
+    worksheet.update('A1', [['N', 'Phone number', 'Name', 'Balance', 'Total costs']])
+    
+    for number, (phone, data) in enumerate(numbers.items(), start=1):
+        write_list.append([
+            number,
+            phone,
+            data['name'],
+            data['balance'],
+            data['total_costs']
+        ])
+    gspread_formatting.set_column_widths(worksheet, [ 
+        ('A:', 50),
+        ('B:', 100),
+        ('C:', 300)
+    ])
+    
+    range_table = 'E'+str(len(write_list) + 1)
+    
+    worksheet.update('A2:' + range_table, write_list)
+    gspread_formatting.format_cell_ranges(
+        worksheet,
+        [('A1:'+ range_table, table_style), ('A1:E1', title_format)]
+    )
+    worksheet.format('D2:' + range_table, float_style)
+
+if __name__ == "__main__":
+    number = {
+        '+79236469989': {
+            'name': 'KSV',
+            'balance': 0.0,
+            'total_costs': 0.0
+        },
+        '+79872268886': {
+            'name': 'RAR',
+            'balance': 60000.0,
+            'total_costs': 100000.0
+        },
+    }
+    gsheets_save(number)

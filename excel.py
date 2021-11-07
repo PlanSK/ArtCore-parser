@@ -1,5 +1,5 @@
-import openpyxl
 import random
+import openpyxl
 
 
 def data_save(numbers_dict: dict) -> None:
@@ -61,4 +61,6 @@ def data_save(numbers_dict: dict) -> None:
     try:
         writebook.save(file_name)
     except PermissionError:
-        writebook.save(file_name.split('.')[0]+str(random.randint(10000,99999))+'.xlsx')
+        writebook.save(file_name.split('.')[0]+str(
+            random.randint(10000,99999))+'.xlsx'
+        )
