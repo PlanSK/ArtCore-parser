@@ -12,7 +12,8 @@ import parser
 
 if __name__ == '__main__':
     balance_bonus = 300.0
-    base_table_key = "1EsL801iyUvi7TtcHOubsnKyYt37VgeCoVPDlcVNi2HA"
+    base_table_key = '1EsL801iyUvi7TtcHOubsnKyYt37VgeCoVPDlcVNi2HA'
+    upload_table_key = '1n5A-fkR0LYCdTbdiBVLcRZ4-AKjEoetCE2bgGJEIym0'
     start_time = datetime.now()
     path = os.path.join(os.getcwd(), 'bases')
     files = [
@@ -79,5 +80,5 @@ if __name__ == '__main__':
     print(f'Total found: {len(numbers_base.keys())} records.')
     excel.data_save(numbers_base)
     print('Saving to Google sheets...')
-    gsheets.gsheets_save(numbers_base)
+    gsheets.gsheets_save(upload_table_key, numbers_base)
     print(f"Time work: {datetime.now() - start_time}")

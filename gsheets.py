@@ -69,8 +69,7 @@ def gsheets_load(table_key: str) -> dict:
     return base
 
 
-def gsheets_save(numbers: dict):
-    table_key = "1n5A-fkR0LYCdTbdiBVLcRZ4-AKjEoetCE2bgGJEIym0"
+def gsheets_save(table_key: str, numbers: dict):
     google_connect = gspread.service_account(filename=GSHEETS_API_KEY)
     gsheet = google_connect.open_by_key(table_key)
     worksheet = gsheet.sheet1
