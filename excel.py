@@ -2,7 +2,7 @@ import random
 import openpyxl
 
 
-def data_save(numbers_dict: dict) -> None:
+def data_save(numbers_dict: dict, file_name: str) -> None:
     boder_style = openpyxl.styles.borders.Border(
         left=openpyxl.styles.borders.Side(style='thin'), 
         right=openpyxl.styles.borders.Side(style='thin'), 
@@ -27,8 +27,6 @@ def data_save(numbers_dict: dict) -> None:
         ("D", 15),
         ("E", 15),
     )
-
-    file_name = 'base.xlsx'
 
     for cell, dim in dimensions:
         active_sheet.column_dimensions[cell].width = dim

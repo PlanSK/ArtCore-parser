@@ -4,6 +4,7 @@ import parser
 
 from gspread_formatting.models import TextFormat
 
+
 GSHEETS_API_KEY = 'esports_cred.json'
 
 
@@ -130,18 +131,3 @@ def gsheets_save(table_key: str, numbers: dict):
         [('A1:'+ range_table, table_style), ('A1:E1', title_format)]
     )
     worksheet.format('D2:' + range_table, float_style)
-
-if __name__ == "__main__":
-    number = {
-        '+79236469989': {
-            'name': 'KSV',
-            'balance': 0.0,
-            'total_costs': 0.0
-        },
-        '+79872268886': {
-            'name': 'RAR',
-            'balance': 60000.0,
-            'total_costs': 100000.0
-        },
-    }
-    gsheets_save(number)
