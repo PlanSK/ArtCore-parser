@@ -18,6 +18,7 @@ def data_save(numbers_dict: dict, file_name: str) -> None:
         'User name',
         'Balance',
         'Total costs',
+        'Loyality'
     ]
     
     dimensions = (
@@ -26,6 +27,7 @@ def data_save(numbers_dict: dict, file_name: str) -> None:
         ("C", 60),
         ("D", 15),
         ("E", 15),
+        ("F", 20)
     )
 
     for cell, dim in dimensions:
@@ -40,7 +42,8 @@ def data_save(numbers_dict: dict, file_name: str) -> None:
             get_number,
             numbers_dict[get_number]['name'],
             numbers_dict[get_number]['balance'],
-            numbers_dict[get_number]['total_costs']
+            numbers_dict[get_number]['total_costs'],
+            numbers_dict[get_number]['loyality']
         ]
         for col_number, value in enumerate(value_list, start=1):
             active_sheet.cell(row=index + 1, column=col_number).value = value

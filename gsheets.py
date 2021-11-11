@@ -54,13 +54,15 @@ def analyze_row(
     return dict()
 
 
-def gsheets_load(table_key: str) -> dict:
+def gsheets_load_data(table_key: str) -> list:
     google_connect = gspread.service_account(filename=GSHEETS_API_KEY)
     gsheet = google_connect.open_by_key(table_key)
 
-    list_of_rows = gsheet.sheet1.get_all_values()
-    base = dict()
+    return gsheet.sheet1.get_all_values()
 
+def gsheets_form_load(table_key: str) -> dict:
+    list_of_rows = gsheets_load_data(table_key)
+    base = dict()
 
     for num, row in enumerate(list_of_rows):
         params = [cell.strip() for cell in [str(num)] + row[4:9] + row[15:17]]
@@ -70,10 +72,45 @@ def gsheets_load(table_key: str) -> dict:
     return base
 
 
-def gsheets_save(table_key: str, numbers: dict):
+def gsheets_guest_load(table_key: str) -> dict:
+    list_of_rows = gsheets_load_data(table_key)
+    base = dict()
+    for num, row in enumerate(list_of_rows):
+        oname = ''
+        if len(row[1].split()) == 2:
+            fname, name = row[1].split()
+        if len(row[1].split()) == 3:
+            fname, name, oname = row[1].split()
+        if analyze_row(
+            number=str(num),
+            phone_number=row[2],
+            fname=fname,
+            name=name,
+            oname=oname,
+            card='',
+            rname='',
+            roname=''
+        ):
+            base.update(
+                analyze_row(
+                    number=str(num),
+                    phone_number=row[2],
+                    fname=fname,
+                    name=name,
+                    oname=oname,
+                    card='',
+                    rname='',
+                    roname=''
+                )
+            )
+
+    return base    
+
+
+def gsheets_save(table_key: str, numbers: dict, sheet: int = 0):
     google_connect = gspread.service_account(filename=GSHEETS_API_KEY)
     gsheet = google_connect.open_by_key(table_key)
-    worksheet = gsheet.sheet1
+    worksheet = gsheet.get_worksheet(sheet)
     worksheet.clear()
     write_list = []
 
@@ -107,7 +144,7 @@ def gsheets_save(table_key: str, numbers: dict):
         )
     )
     
-    worksheet.update('A1', [['N', 'Phone number', 'Name', 'Balance', 'Total costs']])
+    worksheet.update('A1', [['N', 'Phone number', 'Name', 'Balance', 'Total costs', 'Loyality']])
     
     for number, (phone, data) in enumerate(numbers.items(), start=1):
         write_list.append([
@@ -115,19 +152,21 @@ def gsheets_save(table_key: str, numbers: dict):
             phone,
             data['name'],
             data['balance'],
-            data['total_costs']
+            data['total_costs'],
+            data['loyality']
         ])
     gspread_formatting.set_column_widths(worksheet, [ 
         ('A:', 50),
         ('B:', 100),
-        ('C:', 300)
+        ('C:', 300),
+        ('F:', 200),
     ])
     
-    range_table = 'E'+str(len(write_list) + 1)
+    range_table = 'F'+str(len(write_list) + 1)
     
     worksheet.update('A2:' + range_table, write_list)
     gspread_formatting.format_cell_ranges(
         worksheet,
-        [('A1:'+ range_table, table_style), ('A1:E1', title_format)]
+        [('A1:'+ range_table, table_style), ('A1:F1', title_format)]
     )
     worksheet.format('D2:' + range_table, float_style)
