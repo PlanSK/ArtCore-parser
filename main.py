@@ -171,39 +171,42 @@ if __name__ == '__main__':
         if excel_file_name:
             excel.data_save(numbers_base, excel_file_name)
 
-        print('Saving to Google sheets...')
+        print('Saving to Google sheets...', end='')
         gsheets.gsheets_save(upload_table_key, numbers_base)
-
-        print('Saving json file...')
+        print('OK')
+        print('Saving json file...', end='')
         with open(base_file_name, 'w', encoding='utf-8') as json_file:
             json.dump(numbers_base, json_file, indent=4,)
+        print('OK')
+
+        print('Calculate blacklist...')
+        blacklist = list()
+        export_black_list = dict()
+        with open(black_list_famaly, 'r', encoding='utf-8') as black_file:
+            for name in black_file:
+                for key, value in numbers_base.items():
+                    for keyword in value['name'].split():
+                        if name.strip() == keyword:
+                            export_black_list.update({key: value})
+        print('Saving blacklist...', end='')
+        gsheets.gsheets_save(upload_table_key, export_black_list, sheet=1)
+        print('OK')
+
+        print('Calculate duplicates...')
+        double_list = dict()
+
+        counter = 0
+        for key, value in numbers_base.items():
+            for search_key, search_value in numbers_base.items():
+                if value['name'] == search_value['name'] and key != search_key:
+                    if key[-1] == search_key[-1] or (key[-1] in ['3', '8'] and search_key[-1] in ['3', '8']):
+                        double_list.update({key: value, search_key: search_value})
+
+        print('Record double values...', end='')
+        gsheets.gsheets_save(upload_table_key, double_list, sheet=2)
+        print('OK')
     else:
         print('Data files not changed. Skiped.')
-
-
-    blacklist = list()
-    export_black_list = dict()
-    with open(black_list_famaly, 'r', encoding='utf-8') as black_file:
-        for name in black_file:
-            for key, value in numbers_base.items():
-                for keyword in value['name'].split():
-                    if name.strip() == keyword:
-                        export_black_list.update({key: value})
-    print('Record black list values...')
-    gsheets.gsheets_save(upload_table_key, export_black_list, sheet=1)
-
-
-    double_list = dict()
-
-    counter = 0
-    for key, value in numbers_base.items():
-        for search_key, search_value in numbers_base.items():
-            if value['name'] == search_value['name'] and key != search_key:
-                if key[-1] == search_key[-1] or (key[-1] in ['3', '8'] and search_key[-1] in ['3', '8']):
-                    double_list.update({key: value, search_key: search_value})
-
-    print('Record double values...')
-    gsheets.gsheets_save(upload_table_key, double_list, sheet=2)
 
     print(f'{len(numbers_base.keys())} records in base.')
     print(f"Time work: {datetime.now() - start_time}")

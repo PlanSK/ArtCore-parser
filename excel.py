@@ -58,10 +58,11 @@ def data_save(numbers_dict: dict, file_name: str) -> None:
         for cell in row:
             cell.border = boder_style
 
-    print(f'Saving file... {file_name}')
+    print(f'Saving file... {file_name}', end='')
     try:
         writebook.save(file_name)
     except PermissionError:
         writebook.save(file_name.split('.')[0]+str(
             random.randint(10000,99999))+'.xlsx'
         )
+    print('OK')
