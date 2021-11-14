@@ -58,7 +58,7 @@ def data_save(numbers_dict: dict, file_name: str) -> None:
         for cell in row:
             cell.border = boder_style
 
-    print(f'Saving file... {file_name}', end='')
+    print(f'Saving file {file_name}...', end='')
     try:
         writebook.save(file_name)
     except PermissionError:

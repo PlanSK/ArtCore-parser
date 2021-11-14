@@ -59,7 +59,11 @@ if __name__ == '__main__':
     excel_file_name = 'base.xlsx'
     black_list_famaly = 'blacklist.lst'
     start_time = datetime.now()
-    changes_trigger = False
+    changes_trigger = True
+    black_list_gen = True
+    double_key_search = True
+    gsheets_save = True
+
     log.add(
         "long.log",
         filter=lambda record: "long" in record["extra"], mode='w'
@@ -123,6 +127,7 @@ if __name__ == '__main__':
         for file in files:
             wbook = openpyxl.load_workbook(file)
             sheet = wbook.active
+            get_file_name = os.path.split(file)[1]
 
             for row in sheet.iter_rows(
                 min_row=1, 
@@ -138,7 +143,7 @@ if __name__ == '__main__':
                         for get_cell in get_row
                     ]
 
-                    get_number, returned_dict = parser.data_exctraction(file, *cells)
+                    get_number, returned_dict = parser.data_exctraction(get_file_name, *cells)
 
                     if get_number:
                         if not numbers_base.get(get_number):
@@ -152,12 +157,12 @@ if __name__ == '__main__':
                                 returned_dict['total_costs'],
                                 numbers_base[get_number]['total_costs']
                             )
+                            numbers_base[get_number]['file'].extend(returned_dict['file'])
                         numbers_base[get_number]['loyality'] = loyality_rate(
                             numbers_base[get_number]['total_costs']
                         )
 
-            path, file_name = os.path.split(file)
-            checksum_list.update({file_name: hash.checksum_gen(file)})
+            checksum_list.update({get_file_name: hash.checksum_gen(file)})
 
         with open(checksum_file, 'w', encoding='utf-8') as new_checksum_file:
             json.dump(checksum_list, new_checksum_file, indent=4)
@@ -167,44 +172,50 @@ if __name__ == '__main__':
             for number in numbers_base.keys():
                 numbers_base[number]['balance'] += balance_bonus
 
-        print(f'Total found: {len(numbers_base.keys())} records.')
         if excel_file_name:
             excel.data_save(numbers_base, excel_file_name)
 
-        print('Saving to Google sheets...', end='')
-        gsheets.gsheets_save(upload_table_key, numbers_base)
-        print('OK')
-        print('Saving json file...', end='')
-        with open(base_file_name, 'w', encoding='utf-8') as json_file:
-            json.dump(numbers_base, json_file, indent=4,)
-        print('OK')
+        if gsheets_save:
+            print('Saving to Google sheets...', end='')
+            gsheets.gsheets_save(upload_table_key, numbers_base)
+            print('OK')
+            print('Saving json file...', end='')
+            with open(base_file_name, 'w', encoding='utf-8') as json_file:
+                json.dump(numbers_base, json_file, indent=4,)
+            print('OK')
 
-        print('Calculate blacklist...')
-        blacklist = list()
-        export_black_list = dict()
-        with open(black_list_famaly, 'r', encoding='utf-8') as black_file:
-            for name in black_file:
-                for key, value in numbers_base.items():
-                    for keyword in value['name'].split():
-                        if name.strip() == keyword:
-                            export_black_list.update({key: value})
-        print('Saving blacklist...', end='')
-        gsheets.gsheets_save(upload_table_key, export_black_list, sheet=1)
-        print('OK')
+        if black_list_gen:
+            print('Calculate blacklist...')
+            blacklist = list()
+            export_black_list = dict()
+            with open(black_list_famaly, 'r', encoding='utf-8') as black_file:
+                for name in black_file:
+                    for key, value in numbers_base.items():
+                        for keyword in value['name'].split():
+                            if name.strip() == keyword:
+                                export_black_list.update({key: value})
+            print('Saving blacklist...', end='')
+            gsheets.gsheets_save(upload_table_key, export_black_list, sheet=1)
+            print('OK')
 
-        print('Calculate duplicates...')
-        double_list = dict()
+        if double_key_search:
+            print('Calculate duplicates...')
+            double_list = dict()
+            counter = 0
 
-        counter = 0
-        for key, value in numbers_base.items():
-            for search_key, search_value in numbers_base.items():
-                if value['name'] == search_value['name'] and key != search_key:
-                    if key[-1] == search_key[-1] or (key[-1] in ['3', '8'] and search_key[-1] in ['3', '8']):
-                        double_list.update({key: value, search_key: search_value})
+            for key, value in numbers_base.items():
+                for search_key, search_value in numbers_base.items():
+                    if value['name'] == search_value['name'] and key != search_key:
+                        matches = 0
+                        for num_main, num_additional in zip(list(key[2:]), list(search_key[2:])):
+                            if num_main == num_additional:
+                                matches += 1
+                        if matches >= 7:
+                            double_list.update({key: value, search_key: search_value})
 
-        print('Record double values...', end='')
-        gsheets.gsheets_save(upload_table_key, double_list, sheet=2)
-        print('OK')
+            print('Record double values...', end='')
+            gsheets.gsheets_save(upload_table_key, double_list, sheet=2, debug=True)
+            print('OK')
     else:
         print('Data files not changed. Skiped.')
 

@@ -82,6 +82,7 @@ def data_exctraction(
                         f"Value: {costs}. Skipped."
                     )
             data_dict['total_costs'] = total_costs
+            data_dict['file'] = [f'{file}:{order_number}']
 
             return get_number, data_dict
 

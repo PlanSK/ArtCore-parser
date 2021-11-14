@@ -9,7 +9,8 @@ def checksum_gen(file_name: str) -> str:
 
 
 def checksum_check(check_file: str, checksum_data: dict, gsheet: bool = False) -> bool:
-    _, get_file_name = os.path.split(check_file)
+    get_file_name = os.path.split(check_file)[1]
+
     if (checksum_data.get(get_file_name) and
             checksum_data[get_file_name] == checksum_gen(check_file)):
         return True

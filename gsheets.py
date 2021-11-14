@@ -47,7 +47,8 @@ def analyze_row(
                     phone_number): {
                     'name': fio,
                     'balance': float(0),
-                    'total_costs': float(0)
+                    'total_costs': float(0),
+                    'file': ['gsheets']
                 }
             }
 
@@ -107,7 +108,7 @@ def gsheets_guest_load(table_key: str) -> dict:
     return base    
 
 
-def gsheets_save(table_key: str, numbers: dict, sheet: int = 0):
+def gsheets_save(table_key: str, numbers: dict, sheet: int = 0, debug: bool = False):
     google_connect = gspread.service_account(filename=GSHEETS_API_KEY)
     gsheet = google_connect.open_by_key(table_key)
     worksheet = gsheet.get_worksheet(sheet)
@@ -120,12 +121,13 @@ def gsheets_save(table_key: str, numbers: dict, sheet: int = 0):
             'pattern': '#,##0.00'
         }
     }
-    
+
     borders_style = gspread_formatting.Border(
         style='SOLID',
         color=gspread_formatting.Color(0, 0, 0),
         width=1
     )
+
     table_style = gspread_formatting.CellFormat(
         borders=gspread_formatting.Borders(
             top=borders_style,
@@ -134,6 +136,7 @@ def gsheets_save(table_key: str, numbers: dict, sheet: int = 0):
             right=borders_style
         )
     )
+
     title_format = gspread_formatting.CellFormat(
         backgroundColor=gspread_formatting.color(1, 0, 0),
         horizontalAlignment='CENTER',
@@ -143,30 +146,45 @@ def gsheets_save(table_key: str, numbers: dict, sheet: int = 0):
             fontSize=10
         )
     )
-    
-    worksheet.update('A1', [['N', 'Phone number', 'Name', 'Balance', 'Total costs', 'Loyality']])
-    
+
+    cells_list = ['N', 'Phone number', 'Name', 'Balance', 'Total costs', 'Loyality']
+    range_table = 'F'
+    width_cells_list = [ 
+        ('A:', 50),
+        ('B:', 100),
+        ('C:', 300),
+        ('F:', 200),
+    ]
+
     for number, (phone, data) in enumerate(numbers.items(), start=1):
-        write_list.append([
+        data_list = [
             number,
             phone,
             data['name'],
             data['balance'],
             data['total_costs'],
             data['loyality']
-        ])
-    gspread_formatting.set_column_widths(worksheet, [ 
-        ('A:', 50),
-        ('B:', 100),
-        ('C:', 300),
-        ('F:', 200),
-    ])
-    
-    range_table = 'F'+str(len(write_list) + 1)
-    
+        ]
+
+        if debug:
+            data_list.append(','.join(data['file']))
+
+        write_list.append(data_list)
+
+    if debug:
+        cells_list.append('File name')
+        range_table = 'G'
+        width_cells_list.append(('G:', 300))
+
+    worksheet.update('A1', [cells_list])
+
+    gspread_formatting.set_column_widths(worksheet, width_cells_list)
+
+    range_table += str(len(write_list) + 1)
+
     worksheet.update('A2:' + range_table, write_list)
     gspread_formatting.format_cell_ranges(
         worksheet,
-        [('A1:'+ range_table, table_style), ('A1:F1', title_format)]
+        [('A1:'+ range_table, table_style), (f'A1:{range_table[0]}1', title_format)]
     )
     worksheet.format('D2:' + range_table, float_style)
